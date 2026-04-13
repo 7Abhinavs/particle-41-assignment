@@ -1,28 +1,89 @@
-# Particle-41 Assignment – Terraform AWS Infrastructure
+# Particle-41 Assignment – AWS Infrastructure Deployment using Terraform
 
-## Overview
+## Project Overview
 
-This project provisions a complete AWS infrastructure using Terraform to deploy a containerised application on Amazon ECS Fargate behind an Application Load Balancer (ALB).
+This project demonstrates a complete DevOps deployment pipeline using Terraform to provision AWS infrastructure and deploy a containerized application on Amazon ECS Fargate behind an Application Load Balancer (ALB).
 
-It demonstrates real-world DevOps practices such as:
+It follows modern Infrastructure as Code and CI/CD practices using:
 
-* Infrastructure as Code using Terraform
-* Modular Terraform structure
-* ECS Fargate deployment
-* Docker image build and push pipeline
-* GitHub Actions CI/CD
-* Remote Terraform backend using S3 + DynamoDB
+* Terraform
+* AWS
+* Docker
+* GitHub Actions
+* Remote Terraform Backend (S3 + DynamoDB)
 
 ---
 
-# Project Structure
+# What This Project Creates
 
-```text
+Terraform provisions the following AWS resources:
+
+## Networking
+
+* Custom VPC
+* Public Subnets
+* Private Subnets
+* Internet Gateway
+* NAT Gateway
+* Public Route Tables
+* Private Route Tables
+
+## Load Balancing
+
+* Application Load Balancer
+* Listener
+* Target Group
+* Security Group
+
+## Compute
+
+* ECS Cluster
+* ECS Task Definition
+* ECS Service (Fargate)
+* CloudWatch Log Group
+* IAM Roles
+* ECS Security Group
+
+## Remote State Backend
+
+* Amazon S3 bucket for Terraform state
+* Amazon DynamoDB table for state locking
+
+---
+
+# Architecture Flow
+
+```text id="8azvgc"
+User Request
+    ↓
+Application Load Balancer
+    ↓
+ECS Fargate Service
+    ↓
+Docker Containerized App
+```
+
+Network Layout:
+
+```text id="a1v8cw"
+VPC
+├── Public Subnet A  -> ALB / NAT Gateway
+├── Public Subnet B
+├── Private Subnet A -> ECS Tasks
+└── Private Subnet B -> ECS Tasks
+```
+
+---
+
+# Repository Structure
+
+```text id="2dn3go"
 PARTICAL41/
 │
 ├── .github/
 │   └── workflows/
 │       ├── terraform-deploy.yml
+│       ├── terraform-destroy.yml
 │       └── backend-bootstrap.yml
 │
 ├── app/
@@ -44,17 +105,53 @@ PARTICAL41/
 
 ---
 
-# What Terraform Creates
+# Folder Purpose
+
+## app/
+
+Contains application source code and Dockerfile.
+
+Used by CI/CD pipeline to:
+
+* Build Docker image
+* Push image to Docker Hub
+
+## terraform/
+
+Main Infrastructure as Code folder.
+
+Contains:
+
+* Root Terraform configuration
+* Variables
+* Outputs
+* Module references
+
+## terraform/modules/
+
+Reusable Terraform modules:
+
+* vpc
+* alb
+* ecs
+* terraform-backend
+
+## .github/workflows/
+
+GitHub Actions workflows for deployment automation.
+
+---
+
+# Terraform Modules
 
 ## VPC Module
 
-Creates core networking:
+Creates:
 
-* Custom VPC
-* Public Subnets
-* Private Subnets
-* Internet Gateway
+* VPC
+* Public & Private Subnets
 * NAT Gateway
+* Internet Gateway
 * Route Tables
 
 ## ALB Module
@@ -62,8 +159,8 @@ Creates core networking:
 Creates:
 
 * Application Load Balancer
-* Listener
 * Target Group
+* Listener
 * Security Group
 
 ## ECS Module
@@ -73,103 +170,122 @@ Creates:
 * ECS Cluster
 * ECS Task Definition
 * ECS Service
-* Security Group
-* IAM Roles
-* CloudWatch Logs
 
-## Backend Module
+Deploys the Docker application.
 
-Creates remote Terraform backend:
+## Terraform Backend Module
 
-* S3 Bucket for state file
-* DynamoDB table for state locking
+Creates:
 
----
+* S3 Bucket
+* DynamoDB Lock Table
 
-# How This Architecture Works
-
-```text
-User Request
-    ↓
-Application Load Balancer
-    ↓
-ECS Fargate Service
-    ↓
-Docker Container App
-```
-
-Networking:
-
-```text
-VPC
-├── Public Subnet A  -> ALB / NAT
-├── Public Subnet B
-├── Private Subnet A -> ECS Tasks
-└── Private Subnet B -> ECS Tasks
-```
+Used for remote Terraform state.
 
 ---
 
-# Prerequisites
+# GitHub Actions Workflows
 
-Install:
+This repository contains **3 manual workflows**.
 
-* Terraform
-* AWS CLI
-* Git
-* Docker (optional for local builds)
+They run **only when started manually from GitHub UI** using `workflow_dispatch`.
 
-Configure AWS credentials:
+They do **not** run automatically on git push.
 
-```bash
-aws configure
-```
+## 1. Terraform Deployment
 
----
+Used to provision or update infrastructure.
 
-# How to Run Terraform Locally
+Runs:
 
-## Step 1: Move to Terraform Folder
-
-```bash
-cd terraform
-```
-
-## Step 2: Initialize Terraform
-
-```bash
+```bash id="r9zcq6"
 terraform init
-```
-
-## Step 3: Validate Code
-
-```bash
-terraform validate
-```
-
-## Step 4: Review Plan
-
-```bash
 terraform plan
-```
-
-## Step 5: Deploy Infrastructure
-
-```bash
 terraform apply
 ```
 
-Type:
+## 2. Terraform Destroy
 
-```text
-yes
+Used to remove deployed AWS resources.
+
+Runs:
+
+```bash id="6xv1te"
+terraform destroy
+```
+
+## 3. Terraform Backend Setup
+
+Used one time to create:
+
+* S3 backend bucket
+* DynamoDB locking table
+
+Runs:
+
+```bash id="d3l4yg"
+terraform init
+terraform apply
 ```
 
 ---
 
-# How to Destroy Infrastructure
+# How to Run Workflows
 
-```bash
+1. Open repository in GitHub
+2. Go to **Actions**
+3. Select required workflow
+4. Click **Run workflow**
+
+---
+
+# Recommended Order of Execution
+
+For first-time setup:
+
+1. Run **Terraform Backend Setup**
+2. Run **Terraform Deployment**
+3. Use **Terraform Destroy** when cleanup is required
+
+---
+
+# Local Terraform Usage
+
+## Step 1
+
+```bash id="8ajd95"
+cd terraform
+```
+
+## Step 2
+
+```bash id="h1s4wv"
+terraform init
+```
+
+## Step 3
+
+```bash id="x79z1j"
+terraform validate
+```
+
+## Step 4
+
+```bash id="bh3u7m"
+terraform plan
+```
+
+## Step 5
+
+```bash id="u7w9p3"
+terraform apply
+```
+
+---
+
+# Destroy Infrastructure
+
+```bash id="93s0qv"
 terraform destroy
 ```
 
@@ -177,27 +293,27 @@ terraform destroy
 
 # Variables
 
-Infrastructure values are controlled through:
+Infrastructure values are managed using:
 
-```text
+```text id="9l1y7r"
 terraform.tfvars
 ```
 
-Example:
+Examples:
 
-```hcl
+```hcl id="8unv8v"
 region = "ap-south-1"
 desired_count = 1
-container_image = "yourrepo/app:latest"
+container_image = "yourdockerhub/app:latest"
 ```
 
 ---
 
 # Outputs
 
-After apply:
+After deployment:
 
-```bash
+```bash id="4t6l0x"
 terraform output
 ```
 
@@ -211,25 +327,11 @@ Typical outputs:
 
 ---
 
-# CI/CD Pipeline
-
-GitHub Actions pipeline runs on push to `main`.
-
-## Pipeline Steps
-
-1. Checkout source code
-2. Build Docker image from `app/Dockerfile`
-3. Push image to Docker Hub
-4. Run Terraform init / plan / apply
-5. Deploy updated application to ECS
-
----
-
 # Required GitHub Secrets
 
-Add in repository settings:
+Configure repository secrets:
 
-```text
+```text id="shtr67"
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 DOCKERHUB_USERNAME
@@ -238,19 +340,19 @@ DOCKERHUB_TOKEN
 
 ---
 
-# Remote Backend
+# Remote Backend Benefits
 
-Terraform state can be stored remotely using:
+Terraform state is stored remotely using:
 
-* AWS S3 bucket
-* DynamoDB lock table
+* Amazon S3
+* Amazon DynamoDB
 
 Benefits:
 
 * Shared team state
-* Prevents simultaneous updates
-* Secure storage
+* Safe locking
 * Better CI/CD support
+* State versioning
 
 ---
 
@@ -258,151 +360,99 @@ Benefits:
 
 ## Format Code
 
-```bash
+```bash id="0pw9ea"
 terraform fmt
 ```
 
-## Show Resources in State
+## Show State Resources
 
-```bash
+```bash id="s7mx0e"
 terraform state list
-```
-
-## Refresh State
-
-```bash
-terraform refresh
 ```
 
 ## Show Outputs
 
-```bash
+```bash id="g8ec69"
 terraform output
 ```
 
 ---
 
-# Best Practices Used
+# Security Best Practices
 
-* Modular Terraform design
-* Reusable variables
-* CI/CD automation
-* Containerized deployment
-* Separate backend state management
+* Do not commit secrets
+* Use GitHub Secrets
+* Use private subnets for workloads
+* Restrict security groups
+* Use HTTPS in production
+* Use IAM least privilege access
 
 ---
 
-# Recommended Future Enhancements
+# Production Hardening Recommendations
 
-* HTTPS with ACM Certificate
-* Route53 custom domain
+## Security
+
+* Enable HTTPS using AWS Certificate Manager
+* Redirect HTTP to HTTPS
+* Use AWS Secrets Manager
+* Enable encryption for logs and state bucket
+* Add AWS WAF
+
+## Availability
+
 * ECS Auto Scaling
-* Multi-environment setup (dev/prod)
-* Monitoring with CloudWatch / Datadog
-* Secrets Manager integration
+* Multi-AZ deployment
+* Multiple NAT Gateways
+* Rolling deployments
+
+## Monitoring
+
+* Amazon CloudWatch alarms
+* ALB access logs
+* Application health checks
+* Optional Datadog integration
+
+## CI/CD Improvements
+
+* Manual approvals for production
+* Docker image version tags
+* Security image scanning
+* Rollback strategy
+
+## Cost Optimization
+
+* Right-size ECS resources
+* Stop non-prod when unused
+* Review NAT Gateway cost
 
 ---
 
-# Cleanup
+# Important Files to Ignore
 
-Do not commit:
+Use `.gitignore`
 
-```text
+```text id="f4vvba"
 .terraform/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
 ```
 
-Use `.gitignore`.
+---
+
+# Why This Project Matters
+
+This project demonstrates practical DevOps capabilities:
+
+* Terraform modular architecture
+* AWS infrastructure automation
+* ECS container deployment
+* CI/CD pipelines
+* Remote state management
+* Production-ready deployment concepts
 
 ---
 
-# Summary
-
-This project demonstrates end-to-end DevOps implementation using:
-
-* Terraform
-* AWS
-* ECS Fargate
-* Docker
-* GitHub Actions
-* Infrastructure as Code
-
----
-
-
-
-# GitHub Actions Workflows
-
-This repository includes **three separate GitHub Actions workflows** for Terraform operations.
-
-These workflows are configured with **manual triggers (`workflow_dispatch`)**, which means:
-
-✅ They run **only when started manually from the GitHub Actions UI**
-❌ They do **not** run automatically on `git push` or commits
-
-## Available Workflows
-
-### 1. Terraform Deployment
-
-Used to provision or update infrastructure.
-
-Runs:
-
-```bash id="w8ns28"
-terraform init
-terraform plan
-terraform apply
-```
-
----
-
-### 2. Terraform Destroy
-
-Used to remove all deployed AWS infrastructure.
-
-Runs:
-
-```bash id="hqm5bz"
-terraform destroy
-```
-
----
-
-### 3. Terraform Remote Backend Setup
-
-Used one time to create backend resources such as:
-
-* S3 bucket for Terraform state
-* DynamoDB table for state locking
-
-Runs:
-
-```bash id="i5bms4"
-terraform init
-terraform apply
-```
-
----
-
-## How to Run Workflows
-
-1. Open the repository in GitHub
-2. Go to **Actions** tab
-3. Select required workflow
-4. Click **Run workflow**
-
----
-
-## Why Manual Trigger is Used
-
-Manual execution gives better control for infrastructure changes such as:
-
-* Prevent accidental deployments
-* Avoid unintended destroy operations
-* Controlled backend setup
-* Safer production workflow management
-
----:::
-
+# Author
+Abhinav Chauhan
