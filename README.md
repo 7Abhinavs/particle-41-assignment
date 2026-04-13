@@ -330,3 +330,79 @@ This project demonstrates end-to-end DevOps implementation using:
 * Infrastructure as Code
 
 ---
+
+
+
+# GitHub Actions Workflows
+
+This repository includes **three separate GitHub Actions workflows** for Terraform operations.
+
+These workflows are configured with **manual triggers (`workflow_dispatch`)**, which means:
+
+✅ They run **only when started manually from the GitHub Actions UI**
+❌ They do **not** run automatically on `git push` or commits
+
+## Available Workflows
+
+### 1. Terraform Deployment
+
+Used to provision or update infrastructure.
+
+Runs:
+
+```bash id="w8ns28"
+terraform init
+terraform plan
+terraform apply
+```
+
+---
+
+### 2. Terraform Destroy
+
+Used to remove all deployed AWS infrastructure.
+
+Runs:
+
+```bash id="hqm5bz"
+terraform destroy
+```
+
+---
+
+### 3. Terraform Remote Backend Setup
+
+Used one time to create backend resources such as:
+
+* S3 bucket for Terraform state
+* DynamoDB table for state locking
+
+Runs:
+
+```bash id="i5bms4"
+terraform init
+terraform apply
+```
+
+---
+
+## How to Run Workflows
+
+1. Open the repository in GitHub
+2. Go to **Actions** tab
+3. Select required workflow
+4. Click **Run workflow**
+
+---
+
+## Why Manual Trigger is Used
+
+Manual execution gives better control for infrastructure changes such as:
+
+* Prevent accidental deployments
+* Avoid unintended destroy operations
+* Controlled backend setup
+* Safer production workflow management
+
+---:::
+
