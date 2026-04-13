@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: terraform/modules/terraform-backend
+        working-directory: terraform-backend
 
     steps:
       - name: Checkout Source Code
